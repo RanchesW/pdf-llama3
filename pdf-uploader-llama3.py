@@ -1,58 +1,28 @@
-import streamlit as st
-import fitz  # PyMuPDF
-from langchain.prompts import ChatPromptTemplate
-from langchain.llms import Ollama
-from langchain.chains import LLMChain
+import PyPDF2
+from ollama import Ollama
 
-# Initialize the Ollama LLM (adjust with the correct parameters if needed)
-llm = Ollama(model="llama3")
-
-prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", "You are a helpful assistant. Please respond to the questions"),
-        ("user", "Question:{question}"),
-    ]
-)
-
-chain = LLMChain(llm=llm, prompt=prompt)
-
-st.title('Langchain Chatbot With LLAMA2 model')
-
-st.header("Upload documents:")
-uploaded_files = st.file_uploader("Upload your documents (PDFs only):", type=["pdf"], accept_multiple_files=True)
-
-add_document_button = st.button("Add documents")
-
-added_documents = []
-
-st.header("Ask a question:")
-question_text = st.text_input("Ask your question:")
-
-def extract_text_from_pdf(pdf_file):
-    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
-    text = ""
-    for page_num in range(len(doc)):
-        page = doc.load_page(page_num)
-        text += page.get_text()
+def extract_text_from_pdf(pdf_path):
+    """ Извлечь текст из PDF файла """
+    with open(pdf_path, 'rb') as file:
+        reader = PyPDF2.PdfFileReader(file)
+        text = ''
+        for page_num in range(reader.numPages):
+            page = reader.getPage(page_num)
+            text += page.extractText()
     return text
 
-if add_document_button and uploaded_files:
-    for uploaded_file in uploaded_files:
-        text = extract_text_from_pdf(uploaded_file)
-        added_documents.append(text)
-    st.write("Documents added!")
-    st.write("Current documents:", added_documents)
+def analyze_text_with_llama(text):
+    """ Анализировать текст с помощью модели LLaMA """
+    llm = Ollama(model="llama3")
+    response = llm(text)
+    return response
 
-if question_text and added_documents:
-    st.write("Received question:", question_text)
-    context = "\n\n".join(added_documents)
-    prompt_input = {"question": question_text, "context": context}
+# Путь к PDF файлу
+pdf_path = 'png2pdf.pdf'
 
-    st.write("Sending prompt to LLM with context:", prompt_input)
-    answer = chain.run(prompt_input)
-    st.write("Answer:", answer)
-else:
-    if not added_documents:
-        st.write("No documents added yet.")
-    if not question_text:
-        st.write("No question asked yet.")
+# Извлечение текста из файла
+pdf_text = extract_text_from_pdf(pdf_path)
+
+# Анализ текста с помощью LLaMA
+analysis_result = analyze_text_with_llama(pdf_text)
+print("Результат анализа:", analysis_result)
