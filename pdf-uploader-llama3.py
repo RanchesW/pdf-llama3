@@ -5,7 +5,7 @@ from langchain.llms import Ollama
 from langchain.chains import LLMChain
 
 # Initialize the Ollama LLM (adjust with the correct parameters if needed)
-llm = Ollama(model_name="llama3")
+llm = Ollama(model="llama3")
 
 prompt = ChatPromptTemplate.from_messages(
     [
